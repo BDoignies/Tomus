@@ -482,6 +482,7 @@ int main(int argc, char** argv)
                 auto rslt = tomus.Input(&buffer[0]);
                 buffer[0] = '\0';
                 buffSize = 0;
+                errorString = "";
 
                 if (rslt == InputResult::WIN)
                 {
