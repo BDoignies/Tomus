@@ -496,36 +496,49 @@ int main(int argc, char** argv)
         {
             if (IsKeyPressed(KEY_ENTER) && buffSize == tomus.Tries()[0].word.size())
             {
-                // Enforce first letter
-                buffer[0] = word[0];
+                bool isValid = true;
+                int i = 1;
+                while (buffer[i] != '\0')
+                {
+                    if (buffer[i] < 'a' || buffer[i] > 'z')
+                        isValid = false;
 
-                auto rslt = tomus.Input(&buffer[0]);
-                buffer[0] = '\0';
-                buffSize = 0;
-                errorString = "";
-
-                if (rslt == InputResult::WIN)
-                {
-                    tomus.NewWord();
-                }
-                else if (rslt == InputResult::UNKNOWN_WORD)
-                {
-                    errorString = "Ce mot n'est pas dans la liste";
-                    showErrTime = GetTime();
-                }
-                else if (rslt == InputResult::LOSE)
-                {
-                    errorString = std::format("Le mot etait: {}", word);
-                    playing = false;
+                    ++i;
                 }
 
-                freezeTime = GetTime() - startTime; 
+                if (isValid)
+                {
+                    // Enforce first letter
+                    buffer[0] = word[0];
+
+                    auto rslt = tomus.Input(&buffer[0]);
+                    buffer[0] = '\0';
+                    buffSize = 0;
+                    errorString = "";
+
+                    if (rslt == InputResult::WIN)
+                    {
+                        tomus.NewWord();
+                    }
+                    else if (rslt == InputResult::UNKNOWN_WORD)
+                    {
+                        errorString = "Ce mot n'est pas dans la liste";
+                        showErrTime = GetTime();
+                    }
+                    else if (rslt == InputResult::LOSE)
+                    {
+                        errorString = std::format("Le mot etait: {}", word);
+                        playing = false;
+                    }
+
+                    freezeTime = GetTime() - startTime; 
+                }
             }
 
             int key = GetCharPressed();
             while (key > 0)
             {
-                if ((key >= 'a' && key <= 'z'))
+                if ((key >= 'a' && key <= 'z') || key == ' ')
                 {
                     if (startTime < 0.0)
                         startTime = GetTime();
