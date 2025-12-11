@@ -521,8 +521,6 @@ int main(int argc, char** argv)
 
                     if (buffSize != 0)
                     {
-                        errorString = "";
-
                         if (buffSize < word.size())
                         {
                             buffer[buffSize] = key;
@@ -537,7 +535,6 @@ int main(int argc, char** argv)
 
             if (IsKeyPressed(KEY_BACKSPACE))
             {
-                errorString = "";
                 if (buffSize > 0)
                 {
                     buffSize --;
@@ -547,8 +544,8 @@ int main(int argc, char** argv)
 
             if (playing && GetTime() - showErrTime > 5)
                 errorString = "";
-
         }
+
         int time = (!playing) ? freezeTime : (startTime > 0) ? GetTime() - startTime : 0;
         drawConf.Update(GetScreenWidth(), GetScreenHeight(), tomus);
         
