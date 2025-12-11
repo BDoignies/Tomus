@@ -1,0 +1,7 @@
+{
+    "minLength": 5,
+    "maxLength": 9,
+    "maxTries": 6,
+    "maxTime": 1800,
+    "dictionnary": "mots.txt"
+}
