@@ -3,6 +3,12 @@
 #include "raylib.h"
 #include "tomus/tomus.h"
 
+float GetSpacing(float fontSize) 
+{
+    if (fontSize > 10) return fontSize / 10;
+    return 1;
+}
+
 struct DrawBoardConfig
 {
     Vector2 topLeft;
@@ -35,6 +41,7 @@ struct DrawBoardConfig
         return font.baseSize * std::min(fontTargetSize / w, fontTargetSize / h);
     }
 };
+
 
 struct DrawLetterConfig
 {
@@ -202,8 +209,10 @@ void DrawBoard(
             {
                 DrawRectangleRec(rect, config.inwordColor);
             }
-
-            DrawText(buff, x, y, config.GetFontSize(buff[0]), config.fontColor);
+            
+            auto fsize = config.GetFontSize(buff[0]);
+            auto spacing = GetSpacing(fsize);
+            DrawTextEx(config.font, buff, Vector2{x, y}, fsize, spacing, config.fontColor);
         }
     }
 
@@ -237,18 +246,25 @@ void DrawBoard(
             if (j < currentInput.size() && j != 0)
             {
                 const char buff[2] = {(char)(currentInput[j] + majShift), '\0'};
-                DrawText(buff, x, y, config.GetFontSize(buff[0]), config.fontColor);
+                
+                auto fsize = config.GetFontSize(buff[0]);
+                auto spacing = GetSpacing(fsize);
+                DrawTextEx(config.font, buff, Vector2{x, y}, fsize, spacing, config.fontColor);
             }
             else
             {
                 if (lastTry.bestStates[j] == State::GOOD_POSITION)
                 {
                     const char buff[2] = {(char)(lastTry.word[j] + majShift), '\0'};
-                    DrawText(buff, x, y, config.GetFontSize(buff[0]), config.fontColor);
+                    auto fsize = config.GetFontSize(buff[0]);
+                    auto spacing = GetSpacing(fsize);
+                    DrawTextEx(config.font, buff, Vector2{x, y}, fsize, spacing, config.fontColor);
                 }
                 else
                 {
-                    DrawText(buffEmpty, x, y, config.GetFontSize(config.emptyLetter), config.fontColor);
+                    auto fsize = config.GetFontSize(buffEmpty[0]);
+                    auto spacing = GetSpacing(fsize);
+                    DrawTextEx(config.font, buffEmpty, Vector2{x, y}, fsize, spacing, config.fontColor);
                 }
             }
         }
@@ -313,7 +329,11 @@ void DrawLetter(const DrawLetterConfig& conf, char letter, Vector2 pos, State s)
     
     const char l = (char)(majShift + letter);
     const char buffer[2] = {l, '\0'};
-    DrawText(buffer, pos.x + conf.fontSpacing.x, pos.y + conf.fontSpacing.y, conf.GetFontSize(l), fontColor);
+
+    auto fsize = conf.GetFontSize(buffer[0]);
+    auto spacing = GetSpacing(fsize);
+    Vector2 tpos{pos.x + conf.fontSpacing.x, pos.y + conf.fontSpacing.y};
+    DrawTextEx(conf.font, buffer, tpos, fsize, spacing, fontColor);
 }
 
 
