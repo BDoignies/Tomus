@@ -470,7 +470,6 @@ int main(int argc, char** argv)
                 auto rslt = tomus.Input(&buffer[0]);
                 buffer[0] = '\0';
                 buffSize = 0;
-                std::cout << (int)rslt << std::endl;
 
                 if (rslt == InputResult::WIN)
                 {
