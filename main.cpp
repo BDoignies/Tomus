@@ -389,10 +389,12 @@ Config LoadConfig(const std::string& path)
             conf.maxTries  = data["maxTries"].get<unsigned int>();
             conf.maxTime   = data["maxTime"].get<unsigned int>();
             
-            const std::string dicPath = data["dictionnary"].get<std::string>();
+            const std::string dicPath = data["mots"].get<std::string>();
+            const std::string admPath = data["admissibles"].get<std::string>();
 
             std::ifstream fDic(dicPath);
-            if (fDic)
+            std::ifstream aDic(admPath);
+            if (fDic && aDic)
             {
                 std::string buffer;
                 std::vector<std::string> words;
@@ -401,8 +403,18 @@ Config LoadConfig(const std::string& path)
                     if (buffer.size() > conf.minLength && buffer.size() < conf.maxLength)
                         words.push_back(buffer);
                 }
-                std::cout << "Loaded: " << words.size() << std::endl;
                 conf.SetWords(words);
+                std::cout << "Loaded: " << words.size() << std::endl;
+
+                words.resize(0);
+                while (std::getline(aDic, buffer))
+                {
+                    if (buffer.size() >= conf.minLength && buffer.size() <= conf.maxLength)
+                        words.push_back(buffer);
+                }
+                conf.SetAdmissible(words);
+                std::cout << "Loaded: " << words.size() << std::endl;
+
                 return conf;
             }
             else

@@ -23,3 +23,11 @@ add_custom_command(
                 ${CMAKE_SOURCE_DIR}/mots.txt
                 ${CMAKE_CURRENT_BINARY_DIR}/mots.txt
 )
+add_custom_command(
+    TARGET tomus POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_SOURCE_DIR}/admissible.txt
+                ${CMAKE_CURRENT_BINARY_DIR}/admissible.txt
+)
+
+

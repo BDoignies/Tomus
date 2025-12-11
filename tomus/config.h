@@ -13,6 +13,7 @@ struct Config
     {}
     
     void SetWords(const std::vector<std::string>& words);
+    void SetAdmissible(const std::vector<std::string>& words);
     bool IsWordAdmissible(const std::string& str) const;
 
     std::vector<std::string> words;

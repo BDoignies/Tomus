@@ -20,8 +20,9 @@ if __name__ == "__main__":
     all_lines = []
     for line in iff:
         t = transform(line[:-1])
-        if len(t) > 0:
-            all_lines.append(t)
+        if 5 <= len(t) <= 10:  
+            if len(t) > 0:
+                all_lines.append(t)
 
     all_lines = set(all_lines)
     for l in all_lines:
