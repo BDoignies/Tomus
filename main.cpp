@@ -98,7 +98,7 @@ struct DrawTomusConfig
     float boardSize = 1.f / 15.f;
     float boardLetterSpacing = 1.f / 80.f;
 
-    float historyScale = 3.f / 4.f;
+    float historyScale = 2.f / 3.f;
     
     float letterSizeX = 1.f / 30.f;
     float letterSizeY = 1.f / 18.f;
