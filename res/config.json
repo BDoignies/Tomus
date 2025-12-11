@@ -3,6 +3,6 @@
     "maxLength": 9,
     "maxTries": 6,
     "maxTime": 1800,
-    "mots": "mots.txt",
-    "admissibles": "admissible.txt"
+    "mots": "res/mots.txt",
+    "admissibles": "res/admissible.txt"
 }

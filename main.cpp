@@ -120,6 +120,14 @@ struct DrawTomusConfig
     DrawInfoConfig info;
     DrawLetterConfig letters;
 
+    void SetFont(Font f)
+    {
+        board.font = f;
+        history.font = f;
+        info.font = f;
+        letters.font = f;
+    }
+
     void Update(int width, int height, const Tomus& tomus)
     {
         const unsigned int maxWord = tomus.config.maxLength;
@@ -372,7 +380,7 @@ void DrawInfo(const DrawInfoConfig& conf,
     const std::string eMsg = err;
 
     int fSize = conf.GetFontSize('M'); // Biggest letter I guess
-    int spacing = (fSize > 10) ? fSize / 10 : 1;
+    int spacing = GetSpacing(fSize);
     Vector2 eS = MeasureTextEx(conf.font, eMsg.c_str(), fSize, spacing);
     Vector2 wS = MeasureTextEx(conf.font, wMsg.c_str(), fSize, spacing);
     Vector2 sS = MeasureTextEx(conf.font, sMsg.c_str(), fSize, spacing);
@@ -383,13 +391,13 @@ void DrawInfo(const DrawInfoConfig& conf,
     float sX = conf.wordPos.x + conf.contentLength / 2 - sS.x / 2;
     float tX = conf.wordPos.y + conf.contentLength - tS.y;
 
-    DrawText(wMsg.c_str(), wX, newY, fSize, conf.fontColor);
-    DrawText(sMsg.c_str(), sX, newY, fSize, conf.fontColor);
-    DrawText(tMsg.c_str(), tX, newY, fSize, conf.fontColor);
-
-    float eX = conf.errorPos.x - eS.x / 2;
+    DrawTextEx(conf.font, wMsg.c_str(), Vector2{wX, newY}, fSize, spacing, conf.fontColor);
+    DrawTextEx(conf.font, sMsg.c_str(), Vector2{sX, newY}, fSize, spacing, conf.fontColor);
+    DrawTextEx(conf.font, tMsg.c_str(), Vector2{tX, newY}, fSize, spacing, conf.fontColor);
+    
+    float eX = conf.errorPos.x - eS.x;
     float eY = conf.errorPos.y;
-    DrawText(eMsg.c_str(), eX, eY, fSize, conf.fontColor);
+    DrawTextEx(conf.font, eMsg.c_str(), Vector2{eX, eY}, fSize, spacing, conf.fontColor);
 }
 
 Config LoadConfig(const std::string& path)
@@ -461,7 +469,9 @@ int main(int argc, char** argv)
 {
     Config conf;
     if (argc > 1) conf = LoadConfig(argv[1]);
-    else          conf = LoadConfig("config.json");
+    else          conf = LoadConfig("res/config.json"); 
+
+    Font mainFont = LoadFont("res/arial.ttf");
 
     Tomus tomus(conf);
     tomus.NewWord();
@@ -475,6 +485,7 @@ int main(int argc, char** argv)
     SetTargetFPS(currentFps);
 
     DrawTomusConfig drawConf;
+    drawConf.SetFont(mainFont);
     std::vector<char> buffer(conf.maxLength + 1, '\0');
     unsigned int buffSize = 0;
 

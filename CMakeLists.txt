@@ -12,22 +12,7 @@ add_executable(tomus main.cpp tomus/config.cpp tomus/tomus.cpp)
 target_link_libraries(tomus PUBLIC raylib nlohmann_json::nlohmann_json)
 add_custom_command(
     TARGET tomus POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_SOURCE_DIR}/config.json
-                ${CMAKE_CURRENT_BINARY_DIR}/config.json
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/res
+        ${CMAKE_CURRENT_BINARY_DIR}/res
 )
-
-add_custom_command(
-    TARGET tomus POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_SOURCE_DIR}/mots.txt
-                ${CMAKE_CURRENT_BINARY_DIR}/mots.txt
-)
-add_custom_command(
-    TARGET tomus POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_SOURCE_DIR}/admissible.txt
-                ${CMAKE_CURRENT_BINARY_DIR}/admissible.txt
-)
-
-
