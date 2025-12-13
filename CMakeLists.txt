@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.5)
 
 project(tomus)
 set(CMAKE_CXX_STANDARD 20)
 
+set(CMAKE_POLICY_VERSION_MINIMUM 4.0)
 include(CPM.cmake)
 CPMAddPackage("gh:raysan5/raylib#5.5")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
