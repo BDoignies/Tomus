@@ -1,4 +1,4 @@
-#include <format>
+#include <format> 
 #include <nlohmann/json.hpp>
 #include "raylib.h"
 #include "tomus/tomus.h"
@@ -395,7 +395,7 @@ void DrawInfo(const DrawInfoConfig& conf,
     DrawTextEx(conf.font, sMsg.c_str(), Vector2{sX, newY}, fSize, spacing, conf.fontColor);
     DrawTextEx(conf.font, tMsg.c_str(), Vector2{tX, newY}, fSize, spacing, conf.fontColor);
     
-    float eX = conf.errorPos.x - eS.x;
+    float eX = conf.errorPos.x - eS.x / 2;
     float eY = conf.errorPos.y;
     DrawTextEx(conf.font, eMsg.c_str(), Vector2{eX, eY}, fSize, spacing, conf.fontColor);
 }
@@ -471,7 +471,6 @@ int main(int argc, char** argv)
     if (argc > 1) conf = LoadConfig(argv[1]);
     else          conf = LoadConfig("res/config.json"); 
 
-    Font mainFont = LoadFont("res/arial.ttf");
 
     Tomus tomus(conf);
     tomus.NewWord();
@@ -483,6 +482,7 @@ int main(int argc, char** argv)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "TOMUS");
     SetTargetFPS(currentFps);
+    Font mainFont = LoadFont("res/arial.ttf"); 
 
     DrawTomusConfig drawConf;
     drawConf.SetFont(mainFont);
