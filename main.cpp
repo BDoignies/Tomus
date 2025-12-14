@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include "tomus/tomus.h"
 
+std::string exeDir = "";
+
 float GetSpacing(float fontSize) 
 {
     if (fontSize > 10) return fontSize / 10;
@@ -508,13 +510,13 @@ struct Entry
 void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const std::string& in, bool isWin, int score, int ttime, int wordCount)
 {
     using json = nlohmann::json;
-    static const char* leaderBoard = "leaderboard.json";
+    static const std::string leaderBoard = exeDir + "/leaderboard.json";
     static json data;
     static bool saved = false;
     static std::vector<Entry> entries = [&]() {
         std::vector<Entry> entries;
 
-        std::ifstream file(leaderBoard);
+        std::ifstream file(leaderBoard.c_str());
         if (file)
         {
             file >> data;
@@ -560,13 +562,13 @@ void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const 
     for (unsigned int i = 0; i < std::min((int)entries.size(), 3); ++i)
     {
         const auto& e = entries[i];
-        std::string txt = std::format("{}/{}/{} - {} - {} / {} mots", e.day, e.month, e.year, e.team, e.score, e.wordCount);
+        std::string txt = std::format("{}/{}/{} - {} - {} en {} mots", e.day, e.month, e.year, e.team, e.score, e.wordCount);
         Vector2 S = MeasureTextEx(conf.font, txt.c_str(), fSize, spacing);
         iPos = { conf.stringPos.x - S.x / 2, iPos.y + (int)(1.1 * S.y)};
         DrawTextEx(conf.font, txt.c_str(), iPos, fSize, spacing, conf.fontColor);
     }
 
-    if (IsKeyPressed(KEY_ENTER))
+    if (IsKeyPressed(KEY_ENTER) && isWin)
     {
         if (!saved && in.size() > 0)
         {
@@ -591,10 +593,11 @@ void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const 
 
 int main(int argc, char** argv)
 {
+    exeDir = GetDirectoryPath(argv[0]);
+
     Config conf;
     if (argc > 1) conf = LoadConfig(argv[1]);
-    else          conf = LoadConfig("res/config.json"); 
-    conf.maxTries = 2;
+    else          conf = LoadConfig(exeDir + "/res/config.json"); 
 
     Tomus tomus(conf);
     tomus.NewWord();
@@ -606,7 +609,8 @@ int main(int argc, char** argv)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "TOMUS");
     SetTargetFPS(currentFps);
-    Font mainFont = LoadFont("res/arial.ttf"); 
+    std::string fontPath = exeDir + "/res/arial.ttf";
+    Font mainFont = LoadFont(fontPath.c_str()); 
 
     DrawTomusConfig drawConf;
     drawConf.SetFont(mainFont);
@@ -625,8 +629,6 @@ int main(int argc, char** argv)
     {
         const auto& tries = tomus.Tries();
         auto word = tries[0].word;
-        std::cout << word << std::endl;
-        std::cout << conf.maxTime << std::endl;
 
         if (!playing)
         {
@@ -718,7 +720,6 @@ int main(int argc, char** argv)
 
                 if (buffSize != 0)
                 {
-                    std::cout << "Editting: " << word.size() << std::endl;
                     if (buffSize < word.size())
                     {
                         buffer[buffSize] = key;
