@@ -94,6 +94,23 @@ struct DrawInfoConfig
     }
 };
 
+struct DrawEndConfig
+{
+    Font font;
+    Color fontColor = WHITE;
+    float letterSize = 0.f;
+
+    Vector2 stringPos;
+
+    float GetFontSize(char letter) const
+    {
+        GlyphInfo g = GetGlyphInfo(font, letter);
+        float w = g.advanceX;
+        float h = font.baseSize + g.offsetY;
+
+        return font.baseSize * std::min(letterSize / w, letterSize / h);
+    }};
+
 struct DrawTomusConfig
 {
     // As % of screen width or height
@@ -119,6 +136,7 @@ struct DrawTomusConfig
     DrawBoardConfig history;
     DrawInfoConfig info;
     DrawLetterConfig letters;
+    DrawEndConfig end;
 
     void SetFont(Font f)
     {
@@ -126,6 +144,7 @@ struct DrawTomusConfig
         history.font = f;
         info.font = f;
         letters.font = f;
+        end.font = f;
     }
 
     void Update(int width, int height, const Tomus& tomus)
@@ -175,6 +194,9 @@ struct DrawTomusConfig
 
         info.errorPos.x = boardContentPos.x + (width - boardContentPos.x) / 2;
         info.errorPos.y = letters.topLeft.y + 3 * (letters.size.y + letters.spacing.x) + smallPadding * height;
+
+        end.letterSize = info.letterSize * 2;
+        end.stringPos  = info.wordPos;
     }
 };
 
@@ -465,12 +487,114 @@ Config LoadConfig(const std::string& path)
     return conf;
 }
 
+struct Entry 
+{
+    std::string team;
+    int score;
+    int wordCount;
+    int time;
+    int day;
+    int month;
+    int year;
+
+    bool operator<(const Entry& other) {
+        // So that sort returns top to bottom
+        return score > other.score;
+    }
+};
+
+#include <ctime>
+
+void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const std::string& in, bool isWin, int score, int ttime, int wordCount)
+{
+    using json = nlohmann::json;
+    static const char* leaderBoard = "leaderboard.json";
+    static json data;
+    static bool saved = false;
+    static std::vector<Entry> entries = [&]() {
+        std::vector<Entry> entries;
+
+        std::ifstream file(leaderBoard);
+        if (file)
+        {
+            file >> data;
+            for (auto entry : data)
+            {
+                Entry e;
+                e.team = entry["name"].get<std::string>();
+                e.wordCount = entry["score"].get<int>();
+                e.score = entry["wordCount"].get<int>();
+                e.time = entry["time"].get<int>();
+                e.day = entry["day"].get<int>();
+                e.month = entry["month"].get<int>();
+                e.year = entry["year"].get<int>();
+                entries.push_back(e);
+            }
+
+            std::sort(entries.begin(), entries.end());
+        }
+        return entries;
+    }();
+
+
+    int fSize = conf.GetFontSize('M'); // Biggest letter I guess
+    int spacing = GetSpacing(fSize);
+    Vector2 eS = MeasureTextEx(conf.font, display.c_str(), fSize, spacing);
+    DrawTextEx(conf.font, display.c_str(), Vector2{conf.stringPos.x - eS.x / 2, conf.stringPos.y}, fSize, spacing, conf.fontColor);
+    
+    static std::string input;
+    if (!saved)
+    {
+        input = "Nom: " + in;
+    }
+
+    Vector2 iS = MeasureTextEx(conf.font, input.c_str(), fSize, spacing);
+    Vector2 iPos = { conf.stringPos.x - iS.x / 2, conf.stringPos.y + eS.y + iS.y / 2};
+    if (isWin)
+    {
+        DrawTextEx(conf.font, input.c_str(), iPos, fSize, spacing, conf.fontColor);
+    }
+    iPos.y += iS.y / 2;
+
+    // Draw leaderboard:
+    for (unsigned int i = 0; i < std::min((int)entries.size(), 3); ++i)
+    {
+        const auto& e = entries[i];
+        std::string txt = std::format("{}/{}/{} - {} - {} / {} mots", e.day, e.month, e.year, e.team, e.score, e.wordCount);
+        Vector2 S = MeasureTextEx(conf.font, txt.c_str(), fSize, spacing);
+        iPos = { conf.stringPos.x - S.x / 2, iPos.y + (int)(1.1 * S.y)};
+        DrawTextEx(conf.font, txt.c_str(), iPos, fSize, spacing, conf.fontColor);
+    }
+
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        if (!saved && in.size() > 0)
+        {
+            time_t now = time(0);
+            struct tm* tm = localtime(&now);
+
+            data.push_back({
+                {"name", in}, 
+                {"score", score}, 
+                {"time", ttime},
+                {"wordCount", wordCount}, 
+                {"day", tm->tm_mday}, {"month", tm->tm_mon}, {"year", 1900 + tm->tm_year}
+            });
+            saved = true;
+            std::ofstream file(leaderBoard);
+            file << data.dump(4);
+
+            input = in;
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     Config conf;
     if (argc > 1) conf = LoadConfig(argv[1]);
     else          conf = LoadConfig("res/config.json"); 
-
+    conf.maxTries = 2;
 
     Tomus tomus(conf);
     tomus.NewWord();
@@ -496,13 +620,23 @@ int main(int argc, char** argv)
     double freezeTime = 0.;
 
     bool playing = true;
+    bool win = false;
     while (!WindowShouldClose()) 
     {
         const auto& tries = tomus.Tries();
-        const auto& word = tries[0].word;
+        auto word = tries[0].word;
+        std::cout << word << std::endl;
+        std::cout << conf.maxTime << std::endl;
+
+        if (!playing)
+        {
+            word = std::string(32, ' ');
+            buffer.resize(word.size() + 1);
+        }
 
         ClearBackground(drawConf.backgroundColor);
         
+    
         if (playing)
         {
             if (IsKeyPressed(KEY_ENTER) && buffSize == tomus.Tries()[0].word.size())
@@ -527,9 +661,22 @@ int main(int argc, char** argv)
                     buffSize = 0;
                     errorString = "";
 
+                    freezeTime = GetTime() - startTime; 
                     if (rslt == InputResult::WIN)
                     {
                         tomus.NewWord();
+                        if (GetTime() - startTime >= conf.maxTime)
+                        {
+                            tomus.NewWord();
+                            playing = false;
+                            win = true;
+
+                            buffer[0] = '\0';
+                            buffSize = 0;
+                            
+                            // Not an error, I know..S
+                            errorString = std::format("Score: {} en {} mots", tomus.Score(), tomus.History().size());
+                        }
                     }
                     else if (rslt == InputResult::UNKNOWN_WORD)
                     {
@@ -540,50 +687,10 @@ int main(int argc, char** argv)
                     {
                         errorString = std::format("Le mot etait: {}", word);
                         playing = false;
+                        buffer[0] = '\0';
+                        buffSize = 0;
                     }
 
-                    freezeTime = GetTime() - startTime; 
-                }
-            }
-
-            int key = GetCharPressed();
-            while (key > 0)
-            {
-                if ((key >= 'a' && key <= 'z') || key == ' ')
-                {
-                    if (startTime < 0.0)
-                        startTime = GetTime();
-
-                    if (buffSize == 0)
-                    {
-                        if (key != word[0]) 
-                        {
-                            buffer[buffSize] = word[0]; 
-                            buffer[buffSize + 1] = '\0';
-                            buffSize ++;
-                        }
-                    }
-
-                    if (buffSize != 0)
-                    {
-                        if (buffSize < word.size())
-                        {
-                            buffer[buffSize] = key;
-                            buffer[buffSize + 1] = '\0';
-                            buffSize ++;
-                        }
-                    }
-                }
-
-                key = GetCharPressed();
-            }
-
-            if (IsKeyPressed(KEY_BACKSPACE))
-            {
-                if (buffSize > 0)
-                {
-                    buffSize --;
-                    buffer[buffSize] = '\0';
                 }
             }
 
@@ -591,14 +698,64 @@ int main(int argc, char** argv)
                 errorString = "";
         }
 
-        int time = (!playing) ? freezeTime : (startTime > 0) ? GetTime() - startTime : 0;
+        int key = GetCharPressed();
+        while (key > 0)
+        {
+            if ((key >= 'a' && key <= 'z') || key == ' ')
+            {
+                if (startTime < 0.0)
+                    startTime = GetTime();
+
+                if (buffSize == 0)
+                {
+                    if (key != word[0]) 
+                    {
+                        buffer[buffSize] = word[0]; 
+                        buffer[buffSize + 1] = '\0';
+                        buffSize ++;
+                    }
+                }
+
+                if (buffSize != 0)
+                {
+                    std::cout << "Editting: " << word.size() << std::endl;
+                    if (buffSize < word.size())
+                    {
+                        buffer[buffSize] = key;
+                        buffer[buffSize + 1] = '\0';
+                        buffSize ++;
+                    }
+                }
+            }
+
+            key = GetCharPressed();
+        }
+
+        if (IsKeyPressed(KEY_BACKSPACE))
+        {
+            if (buffSize > 0)
+            {
+                buffSize --;
+                buffer[buffSize] = '\0';
+            }
+        }
+
+        int time = GetTime() - startTime;
         drawConf.Update(GetScreenWidth(), GetScreenHeight(), tomus);
         
         BeginDrawing();
-            DrawBoard(drawConf.board, tries, tomus.config.maxTries, &buffer[0], true, true);
-            DrawLetters(drawConf.letters, tries.back().letters);
-            DrawInfo(drawConf.info, tomus.History().size() + 1, tomus.Score(), time, errorString);
+            if (playing)
+            {
+                DrawBoard(drawConf.board, tries, tomus.config.maxTries, &buffer[0], true, true);
+                DrawLetters(drawConf.letters, tries.back().letters);
+                DrawInfo(drawConf.info, tomus.History().size() + 1, tomus.Score(), time, errorString);
+            }
+            else
+            {
+                DrawEndScreen(drawConf.end, errorString, &buffer[0], win, tomus.Score(), freezeTime, tomus.History().size());
+            }
             DrawHistory(drawConf.history, tomus.History());
+
         EndDrawing();
     }
 
