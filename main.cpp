@@ -580,7 +580,7 @@ void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const 
                 {"score", score}, 
                 {"time", ttime},
                 {"wordCount", wordCount}, 
-                {"day", tm->tm_mday}, {"month", tm->tm_mon}, {"year", 1900 + tm->tm_year}
+                {"day", tm->tm_mday}, {"month", tm->tm_mon + 1}, {"year", 1900 + tm->tm_year}
             });
             saved = true;
             std::ofstream file(leaderBoard);

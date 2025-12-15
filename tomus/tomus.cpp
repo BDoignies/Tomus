@@ -90,9 +90,11 @@ InputResult Tomus::Input(const std::string& input)
             else if (countLetter - countInWord - countGoodPos > 0)
             {
                 t.states[i] = State::IN_WORD;
-                t.letters[idx] = State::IN_WORD;
 
-                if (t.bestStates[i] == State::UNKNOWN && t.bestStates[i] != State::GOOD_POSITION)
+                if (t.letters[idx] == State::UNKNOWN)
+                    t.letters[idx] = State::IN_WORD;
+
+                if (t.bestStates[i] == State::UNKNOWN)
                     t.bestStates[i] = State::IN_WORD;
             }
         }
