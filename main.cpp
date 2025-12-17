@@ -255,8 +255,8 @@ void DrawBoard(
         const char buffEmpty[2] = {config.emptyLetter, '\0'};
 
         // Draw cursor 
+        unsigned int pos = currentInput.size();
         {
-            unsigned int pos = currentInput.size();
             if (currentInput.size() > 0) pos --;
 
             const float x = computePosX(pos);
@@ -275,6 +275,16 @@ void DrawBoard(
         {
             const float x = computePosX(j, true);
             
+            if (j < currentInput.size())
+            {
+                Rectangle rect = {
+                    .x = computePosX(j) + config.gridThickness / 2, 
+                    .y = computePosY(tries.size() - 1) + config.gridThickness / 2,
+                    .width  = config.gridSize,
+                    .height = config.gridSize
+                };
+                DrawRectangleRec(rect, config.cursorColor);
+            }
             if (j < currentInput.size() && j != 0)
             {
                 const char buff[2] = {(char)(currentInput[j] + majShift), '\0'};
@@ -498,6 +508,7 @@ struct Entry
     int day;
     int month;
     int year;
+    std::vector<std::vector<std::string>> guesses;
 
     bool operator<(const Entry& other) {
         // So that sort returns top to bottom
@@ -507,7 +518,7 @@ struct Entry
 
 #include <ctime>
 
-void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const std::string& in, bool isWin, int score, int ttime, int wordCount)
+void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const std::string& in, bool isWin, int score, int ttime, int wordCount, const Tomus& tomus)
 {
     using json = nlohmann::json;
     static const std::string leaderBoard = exeDir + "/leaderboard.json";
@@ -575,12 +586,23 @@ void DrawEndScreen(const DrawEndConfig& conf, const std::string& display, const 
             time_t now = time(0);
             struct tm* tm = localtime(&now);
 
+            std::vector<std::vector<std::string>> inputs;
+            for (const auto& entry : tomus.History())
+            {
+                inputs.push_back({});
+                for (const auto& in : entry)
+                {
+                    inputs.back().push_back(in.input);
+                }
+            }
+
             data.push_back({
                 {"name", in}, 
                 {"score", score}, 
                 {"time", ttime},
                 {"wordCount", wordCount}, 
-                {"day", tm->tm_mday}, {"month", tm->tm_mon + 1}, {"year", 1900 + tm->tm_year}
+                {"day", tm->tm_mday}, {"month", tm->tm_mon + 1}, {"year", 1900 + tm->tm_year},
+                {"guesses", inputs }
             });
             saved = true;
             std::ofstream file(leaderBoard);
@@ -753,7 +775,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                DrawEndScreen(drawConf.end, errorString, &buffer[0], win, tomus.Score(), freezeTime, tomus.History().size());
+                DrawEndScreen(drawConf.end, errorString, &buffer[0], win, tomus.Score(), freezeTime, tomus.History().size(), tomus);
             }
             DrawHistory(drawConf.history, tomus.History());
 

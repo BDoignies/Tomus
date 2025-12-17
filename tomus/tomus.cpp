@@ -1,5 +1,19 @@
 #include "tomus.h"
 
+uint32_t computeScore(uint32_t guess)
+{
+    switch (guess)
+    {
+        case 1: return 250;
+        case 2: return 200;
+        case 3: return 150;
+        case 4: return  75;
+        case 5: return  50;
+        default:
+                return 0;
+    }
+}
+
 Try::Try(std::string_view w) : 
     word(w), input(w.size(), '.'),
     states(w.size(), State::UNKNOWN),
@@ -20,7 +34,7 @@ void Tomus::NewWord()
     if (currentTries.size() > 0)
     {
         history.push_back(currentTries);
-        score += 175 - 25 * currentTries.size();
+        score += computeScore(currentTries.size() - 1);
 
         currentTries.clear();
     }
